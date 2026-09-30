@@ -16,3 +16,6 @@ e2e/specs/*
 
 # frontend-maven-plugin downloads node here
 src/main/frontend/node/
+
+# TanStack Router generates this from routes/ — build artifact, never committed.
+src/main/frontend/routeTree.gen.ts

@@ -6,11 +6,13 @@ This is a **base repository** for `ui-long-degradation-test` (see that repo's `D
 one full-stack English change request per checkpoint — committing each checkpoint on that run
 branch. The base branch is only ever read.
 
-This stack is **React (front-end) + OfficeFloor (backend)** on in-memory H2 — hence the name
-`officehq-react-officefloor`.
+This stack is **additive React (front-end) + OfficeFloor (backend)** on in-memory H2 — hence the
+name `officehq-tanstack-officefloor`. The front-end is React with TanStack Router (file-based
+routes), TanStack Query (server state by key) and a glob-discovered slot registry, so that adding a
+feature adds files instead of editing them. It is the front-end arm against
+`~/officehq-react-officefloor`, which holds everything else constant.
 
-**This folder is a skeleton: every item below is a stub with `TODO` markers.** Fill them in to get
-a runnable base. Because the harness only depends on the *contract* (not the tech), you create a
+**This folder is green** (§A–§H verified; see the front-end notes in §B and §E). Because the harness only depends on the *contract* (not the tech), you create a
 new stack as a **home-level sibling** `~/officehq-<frontend>-<backend>` (name both layers, since
 either may vary), satisfy the same checklist with a different technology, and point `app.repo` at
 it — that is how different technology stacks are compared, one run each, to see which resists
@@ -25,7 +27,8 @@ boot, a static-served SPA, an `/actuator/health` readiness probe, and the `/__te
 
 - [ ] **No domain tables.** `src/main/resources/db/migration/` has no Flyway migrations at base
       (empty dir with `.gitkeep`). cp01 adds `V1__*.sql` creating the first real tables.
-- [ ] **No domain features.** The front-end is a bare shell (empty home); the backend has no domain
+- [x] **No domain features.** The front-end is a bare shell (empty home, one nav link contributed
+      by `features/home/nav.slot.tsx` as the worked example); the backend has no domain
       `officefloor/rest` routes yet (only Spring's `/actuator/health` + the `/__test__` support).
       The app **builds, boots, and serves the shell** as-is.
 - [ ] **It is green before cp01.** `bin/build` succeeds and `bin/start` serves `/actuator/health`
@@ -42,9 +45,16 @@ boot, a static-served SPA, an `/actuator/health` readiness probe, and the `/__te
       the JVM.
 - [ ] **Flyway on boot** (`spring.flyway.enabled=true`, `ddl-auto=none`), from
       `src/main/resources/db/migration` — builds the schema up from empty.
-- [ ] **SPA served from `src/main/resources/static`** (Spring serves `static/`); `src/main/frontend`
+- [x] **SPA served from `src/main/resources/static`** (Spring serves `static/`); `src/main/frontend`
       builds into `static/`. SPA deep-link fallback is `SpaConfig.java` (unknown non-`api/` →
-      `index.html`).
+      `index.html`) — REQUIRED by this arm, since selection and filter state are real URLs.
+- [x] **The front-end's shared structure is derived, not edited.** `routeTree.gen.ts` is generated
+      by the TanStack Router vite plugin from `routes/` and is **gitignored** — it is build output
+      and must never appear in a checkpoint's diff (it would swamp the erosion metrics). The slot
+      registry (`slots/discover.ts`) finds `features/**/*.slot.tsx` by glob. Arrows run one way —
+      `discover → features → slots/defs → Slot → registry` — which is what keeps the module graph
+      acyclic; a registry that both globs contributions and is imported by them deadlocks at
+      startup (TDZ) and renders a blank page.
 - [ ] **`/actuator/health`** (Spring Actuator) — the harness readiness probe
       (`config.yaml → app.health_url`).
 - [ ] No external services, no network egress needed to build/boot (toolchain resolvable offline
@@ -92,8 +102,11 @@ These commands must stay constant across checkpoints even as the app evolves. Th
 
 - [ ] `CLAUDE.md` (and `AGENTS.md`) tell the agent: it is making a **full-stack** change
       (migration + OfficeFloor server + front-end) from a plain-English request; the `data-testid`
-      immutability rule; that it can run `bin/e2e` to test; the additive/opinionated conventions of
-      the shell (routing, no global store, closed primitives, slice boundaries, scoped styles).
+      immutability rule; that it can run `bin/e2e` to test; and the additive conventions of the
+      shell. For this arm those are the **five front-end rules** (page = a file under `routes/`;
+      drill-in = a child route, never a flag; UI added to a region = a new `*.slot.tsx`; state that
+      outlives a click = a URL key; server data = a query key, never `useState`) plus: features
+      never import each other and never pass a callback that changes a sibling's rendering.
 - [ ] These never leak the checkpoint sequence (no cpNN references, no prior-request hints).
 
 ## F. Layout the harness expects (matches `config.yaml`)
@@ -107,7 +120,8 @@ src/main/resources/officefloor/rest/**/*.yml      # additive OfficeFloor REST ro
 src/main/resources/db/migration/                  # Flyway migrations (empty at base)
 src/main/resources/static/                         # SPA build output, served by Spring
 src/main/frontend/**/*.{ts,tsx}                   # front-end source (source_globs.frontend); builds into static/
-src/main/frontend/{router,ui}/                     # shared_surfaces.frontend
+src/main/frontend/{slots,url,api,query}/,main.tsx,routes/__root.tsx  # shared_surfaces.frontend
+src/main/frontend/routeTree.gen.ts                # GENERATED + gitignored (exclude from metrics)
 e2e/{playwright.config.ts,package.json,support/}  # Playwright project (specs copied in per cp)
 CLAUDE.md, AGENTS.md                               # pinned agent instructions
 ```
