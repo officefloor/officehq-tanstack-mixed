@@ -1,0 +1,22 @@
+# What this STACK is, for the harness (~/ui-long-degradation-test). Read at `base-empty`, never
+# from the working tree, so a run always measures the layers the base declared.
+#
+# The layer source roots live HERE rather than in the harness config for the same reason `--repo`
+# does: one harness drives many stacks, and a harness-level glob like
+# `src/main/frontend/**/*.{ts,tsx}` silently matches NOTHING for a stack whose front-end is
+# templates or `.svelte` — every `frontend_*` column then reads 0/None, which looks like an answer.
+#
+# `ext` says which files ARE this layer's source. It does not promise they are parseable: a layer
+# Lizard cannot read still gets every git-derived metric (hot_surface, reedit_line_stats, impact
+# addition/mutation split), and its parser-derived columns come back blank instead of zero.
+#
+# GENERATED CODE MUST BE GITIGNORED (see .gitignore): the metrics read committed trees and diffs,
+# so anything ignored is simply absent. Here that is `routeTree.gen.ts` (TanStack Router generates
+# it from routes/) and `src/main/resources/static/` (the vite build output).
+layers:
+  frontend:
+    root: src/main/frontend
+    ext: [ts, tsx]
+  backend:
+    root: src/main/java
+    ext: [java]
