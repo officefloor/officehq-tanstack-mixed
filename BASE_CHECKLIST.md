@@ -6,8 +6,10 @@ This is a **base repository** for `ui-long-degradation-test` (see that repo's `D
 one full-stack English change request per checkpoint — committing each checkpoint on that run
 branch. The base branch is only ever read.
 
-This stack is **additive React (front-end) + OfficeFloor (backend)** on in-memory H2 — hence the
-name `officehq-tanstack-officefloor`. The front-end is React with TanStack Router (file-based
+This stack is **additive React (front-end) + a MIXED backend** on in-memory H2 — hence the name
+`officehq-tanstack-mixed`. Reads are Spring `@RestController`, writes are OfficeFloor YAML + a
+logic class, and both are present in the pom from the base. It is a risk probe for gradual
+adoption: see `README.md` and `stack.yaml`. The front-end is React with TanStack Router (file-based
 routes), TanStack Query (server state by key) and a glob-discovered slot registry, so that adding a
 feature adds files instead of editing them. It is the front-end arm against
 `~/officehq-react-officefloor`, which holds everything else constant.
@@ -39,8 +41,10 @@ boot, a static-served SPA, an `/actuator/health` readiness probe, and the `/__te
 - [ ] **Single JVM, no daemon/container.** Spring Boot 4 (`spring-boot-starter-parent` 4.1.0) is the
       host; OfficeFloor REST is added via `net.officefloor.springboot:officefloor-rest-spring-boot-4-
       starter`. Standard `@SpringBootApplication` main; `spring-boot-maven-plugin` repackage.
-- [ ] **Domain REST is additive OfficeFloor YAML** — `officefloor/rest/<path>.GET.yml`
-      (`service: { class: … }`) + a logic class per endpoint (the additive backend property, §8).
+- [x] **Domain REST is MIXED, split by HTTP method** — reads are Spring `@RestController` under
+      `/api/`, writes are `officefloor/rest/api/<path>.<METHOD>.yml` + a logic class. The split is
+      stated in `CLAUDE.md` as non-optional; whether the agent holds to it is part of the
+      measurement, and the backend class-shape table reports the blend per run.
 - [ ] **In-memory H2** (`spring.datasource.url=jdbc:h2:mem:officehq;DB_CLOSE_DELAY=-1`); dies with
       the JVM.
 - [ ] **Flyway on boot** (`spring.flyway.enabled=true`, `ddl-auto=none`), from

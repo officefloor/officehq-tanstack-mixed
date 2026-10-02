@@ -1,10 +1,26 @@
-# officehq-tanstack-officefloor — base repository (additive React SPA + OfficeFloor)
+# officehq-tanstack-mixed — base repository (additive React SPA + a MIXED backend)
 
 A **base repository** for the `ui-long-degradation-test` harness — **one technology stack**:
 front-end an **additive React SPA** (TanStack Router + TanStack Query + a slot registry), backend
-**OfficeFloor** (within Spring) on in-memory H2. It is the *front-end* arm of the comparison with
-`~/officehq-react-officefloor`: same language, same UI library, same backend — the only variable is
-whether the front-end's shared structure is edited or added to.
+**mixed**: read endpoints (`GET`) are Spring `@RestController`, mutating endpoints
+(`POST`/`PUT`/`DELETE`) are OfficeFloor YAML + a logic class. In-memory H2.
+
+**This is a risk probe for gradual adoption, not a model of it.** Every other arm is
+architecturally pure. A gradual-adoption story — migrate the endpoints that keep changing, leave
+the stable ones alone — necessarily produces a mixed application, in which a developer *and an AI
+agent* must hold two backend idioms at once. It is entirely plausible that a mixed app erodes worse
+than either pure one: the agent picks the wrong idiom, copies whichever neighbour it read first, or
+duplicates a rule across both styles. Nothing measured so far would have shown that, and a product
+built on gradual adoption depends on it not being true.
+
+The split is by HTTP method and fixed by `CLAUDE.md`: deterministic, no lookup table for the agent
+to remember, a roughly even mix over the ~60 checkpoints, and the orchestration-heavy endpoints on
+the OfficeFloor side — where a churn-triggered migration would move things first in practice.
+
+So it answers the **prerequisite** question ("is holding two idioms harmful in itself?"), not the
+product question ("does migration-on-churn work?"). Compare it against the two pure arms with the
+same front end: `~/officehq-tanstack-officefloor` and `~/officehq-tanstack-spring`. The front end
+is byte-identical to both.
 
 Every shared structure here is **generated from the file system** or **addressed by a key**, so a
 feature is new files:
@@ -37,7 +53,7 @@ checkpoint.
   front-end, different backend, or both), satisfy the same `BASE_CHECKLIST.md`, and point
   `app.repo` at it. Each is its own run.
 
-**Status: green.** `bin/build` produces the one jar, `bin/start` serves the shell, and the shell's
-mechanisms (page self-registration, slot contributions in order, URL-as-state across sibling
-components surviving a reload, and TanStack Query against the running app) were verified end to end
-with a throwaway spec through `bin/e2e`. See **[BASE_CHECKLIST.md](./BASE_CHECKLIST.md)**.
+**Status: green.** `bin/build` produces the one jar and `bin/e2e` verified the shell against the
+real jar. The pom carries **both** idioms (the OfficeFloor starter and Spring MVC), so the mix is a
+rules change in `CLAUDE.md` rather than a dependency change, and the front end is byte-identical to
+the two pure arms.

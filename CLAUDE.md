@@ -2,7 +2,7 @@
 
 You are making ONE change to this application in response to the change request you were given.
 Implement it as a **full-stack change**: whatever the request needs across the database schema, the
-server (OfficeFloor REST on a Spring Boot host), and the front-end — as a small, additive,
+server (a MIXED backend — read the rule below), and the front-end — as a small, additive,
 local change.
 
 ## Rules
@@ -84,14 +84,22 @@ generated route tree, so it builds first).
   - `slots/defs/**` — one file per UI region (add files; don't edit them).
   - `ui/**` — shared presentational primitives, *composed*, never branched with per-feature `if`s.
   - `url/`, `api/`, `query/` — the URL-state, fetch and cache helpers. Use them; don't edit them.
-- `src/main/resources/officefloor/rest/api/<path>.<METHOD>.yml` — a REST endpoint = a **new YAML
-  file** (`service: { class: net.officefloor.hq.app.<Logic> }`) + a **new logic class** whose
-  `service(...)` method takes injected Spring beans/data + `ObjectResponse<T>` (and, for a body,
-  a param with `@RequestBody`). Additive: one file per endpoint, never a central router. **Put
-  domain routes under `rest/api/`** so their paths start with `/api/` — `SpaConfig` only lets
-  `/api/*` bypass the SPA deep-link fallback; a non-`/api/` route is swallowed and returns the
-  SPA HTML instead of your endpoint.
-- `src/main/java/**` — logic classes and Spring `@Service`/`@Repository` beans (business logic +
-  data access). `Application`, `SpaConfig`, `TestSupportController` are base infrastructure.
+- **The backend is MIXED, split by HTTP method. This split is not optional:**
+  - **READ endpoints (`GET`) are Spring MVC.** A `@RestController` class under `/api/`, with
+    `@GetMapping` methods. Group them per entity the way Spring normally does.
+  - **MUTATING endpoints (`POST`/`PUT`/`DELETE`) are OfficeFloor.** A **new YAML file**
+    `src/main/resources/officefloor/rest/api/<path>.<METHOD>.yml`
+    (`service: { class: net.officefloor.hq.app.<Logic> }`) + a **new logic class** whose
+    `service(...)` method takes injected Spring beans/data + `net.officefloor.web.ObjectResponse<T>`
+    (and, for a body, a param with `@RequestBody`). One file per endpoint, never a central router.
+  - Both kinds live under `/api/` — `SpaConfig` only lets `/api/*` bypass the SPA deep-link
+    fallback, so a non-`/api/` route returns the SPA HTML instead of your endpoint.
+  - Shared business logic and data access are ordinary `@Service`/`@Repository` beans, injected by
+    both kinds. Do not duplicate logic across the two styles: if a read and a write need the same
+    rule, it belongs in a service they both inject.
+- `src/main/java/**` — both kinds of endpoint plus the beans they share: OfficeFloor logic classes
+  (`service(...)`, wired by their YAML) for writes, `@RestController` classes for reads, and
+  `@Service`/`@Repository` beans for business logic and data access. `Application`, `SpaConfig`
+  and `TestSupportController` are base infrastructure.
 - `src/main/resources/db/migration/**` — Flyway migrations (new `V<n>__*.sql` per schema change).
 - `bin/e2e` — build, start the app, run your test, stop. Run it to check your work.

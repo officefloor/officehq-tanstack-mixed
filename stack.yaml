@@ -1,45 +1,51 @@
 # What this STACK is, for the harness (~/ui-long-degradation-test). Read at `base-empty`, never
 # from the working tree, so a run always measures the layers the base declared.
 #
-# The layer source roots live HERE rather than in the harness config for the same reason `--repo`
-# does: one harness drives many stacks, and a harness-level glob like
-# `src/main/frontend/**/*.{ts,tsx}` silently matches NOTHING for a stack whose front-end is
-# templates or `.svelte` — every `frontend_*` column then reads 0/None, which looks like an answer.
+# ── WHY THIS ARM EXISTS ───────────────────────────────────────────────────────────────────────
+# A RISK PROBE for gradual adoption, not a model of it.
 #
-# `ext` says which files ARE this layer's source. It does not promise they are parseable: a layer
-# Lizard cannot read still gets every git-derived metric (hot_surface, reedit_line_stats, impact
-# addition/mutation split), and its parser-derived columns come back blank instead of zero.
+# Every other arm is architecturally PURE. A gradual-adoption story — migrate the endpoints that
+# keep changing, leave the stable ones alone — necessarily produces a MIXED application, where a
+# developer and an AI agent must hold two backend idioms at once. It is entirely plausible that a
+# mixed app erodes worse than either pure one: the agent picks the wrong idiom for an endpoint, or
+# copies whichever neighbour it happened to read first, or duplicates a rule across the two styles.
+# Nothing measured so far would have shown that, and a product built on gradual adoption depends
+# on it not being true.
 #
-# GENERATED CODE MUST BE GITIGNORED (see .gitignore): the metrics read committed trees and diffs,
-# so anything ignored is simply absent. Here that is `routeTree.gen.ts` (TanStack Router generates
-# it from routes/) and `src/main/resources/static/` (the vite build output).
+# The split here is BY HTTP METHOD and is fixed by CLAUDE.md: reads (GET) are Spring
+# @RestController, writes (POST/PUT/DELETE) are OfficeFloor YAML + a logic class. It is
+# deterministic, needs no lookup table the agent must remember, yields a roughly even mix over the
+# ~60 checkpoints, and puts the orchestration-heavy endpoints on the OfficeFloor side — which is
+# where a churn-triggered migration would in practice move things first.
+#
+# It therefore answers the PREREQUISITE question ("is holding two idioms harmful in itself?"), not
+# the product question ("does migration-on-churn work?"). If mixing is harmful per se, gradual
+# adoption is in trouble however the migration is triggered. Compare against the two pure arms
+# with the SAME front end: officehq-tanstack-officefloor and officehq-tanstack-spring.
+#
+# The mix RATIO needs no new metric: the backend class-shape table already separates
+# `officefloor-procedure` from `spring-bean`, so each checkpoint's blend is visible, and a run
+# that quietly abandons one idiom shows up there rather than having to be read out of diffs.
 layers:
   frontend:
     root: src/main/frontend
     ext: [ts, tsx]
-    # jscpd's language for this layer's duplication metrics (dup_*) — declared here because the
-    # harness cannot guess it, and a wrong/absent value yields blanks rather than a silent zero.
     jscpd_format: typescript,tsx
-    # The layer's ENTRY SURFACE, as a regex over "<file>::<function>". Anchors the role-comparable
-    # handler metrics (entry_cc, wmc_handler, erosion_handler) to the unit a new feature enters
-    # through: here the file-based route components. `wmc_max` reports whatever the heaviest file
-    # happens to be, which is not the same thing across stacks.
     handler_pattern: "/routes/[^:]*::"
-    # The declared ADDITIVE unit, for fnpkg_* (count rises while size stays flat = healthy
-    # additive growth; size climbing = the unit is absorbing rules).
     function_package_glob: "src/main/frontend/features/**/*.slot.tsx"
   backend:
     root: src/main/java
     ext: [java]
     jscpd_format: java
-    # Every OfficeFloor logic class reached through a `service(...)` method.
-    handler_pattern: "::service$"
-    # Non-blank, non-comment YAML lines of the wiring, counted separately (config_loc) and never
-    # mixed into an erosion or verbosity denominator.
+    # ONE pattern spanning BOTH idioms, so the entry-surface metrics (entry_cc, wmc_handler,
+    # erosion_handler) cover the whole backend rather than half of it. An OfficeFloor procedure is
+    # reached through `service(...)`; a Spring read handler lives on a *Controller. Plain
+    # @Service/@Repository beans are excluded, as in every other arm.
+    handler_pattern: "(::service$|Controller[^:]*::)"
     config_globs: ["src/main/resources/officefloor/**/*.yml"]
-    # One wired node per endpoint: this arm declares a YAML file per route, so the node roots come
-    # from a GLOB rather than one wiring file. Drives node_cc_median — the complexity a developer
-    # loads to change one rule — and node_exclusive_share, how much of it each node owns alone.
+    # Wired nodes exist for the WRITE half only, so node_count will be roughly half the endpoint
+    # count. That is the architecture being reported, not a partial declaration — and the gap
+    # between node_count and the total endpoint count is itself the mix ratio.
     node_roots:
       wiring_glob: "src/main/resources/officefloor/rest/**/*.yml"
       class_regex: 'class:\s*([\w.]+)'
