@@ -4,9 +4,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
  * Read and write ONE search-param key.
  *
  * State that outlives a click lives in the URL, not in a parent component — a filter, a sort, a
- * toggle, which row is selected. That is why adding one never edits a page: the control that owns
- * the key is a self-contained file, and whoever reads the key does so directly. Search params are
- * an open namespace (declared once in routes/__root.tsx), so a new key needs no schema change.
+ * toggle, which row is selected. The control that owns a key is a self-contained file, and whoever
+ * reads the key does so directly. Search params are an open namespace (declared once in
+ * routes/__root.tsx), so a new key needs no schema change.
  *
  *     const [status, setStatus] = useSearchParam('status', asString);
  */

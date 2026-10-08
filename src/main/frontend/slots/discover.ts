@@ -1,9 +1,9 @@
 import { register } from './registry';
 import type { Registered } from './registry';
 
-// Discovery: every `features/**/*.slot.tsx` in the app is found here and registered, so no list of
-// features exists anywhere. A file exports `contribution`, or `contributions` for more than one.
-// Imported once, for its side effect, by main.tsx. Do not edit.
+// Discovery: every `features/**/*.slot.tsx` in the app is found here and registered, so there is
+// no explicit list of features. A file exports `contribution`, or `contributions` for more than
+// one. Imported once for its side effect by main.tsx.
 const modules = import.meta.glob('../features/**/*.slot.tsx', { eager: true }) as Record<
   string,
   { contribution?: Omit<Registered, 'from' | 'order'> & { order?: number }; contributions?: Array<Omit<Registered, 'from' | 'order'> & { order?: number }> }

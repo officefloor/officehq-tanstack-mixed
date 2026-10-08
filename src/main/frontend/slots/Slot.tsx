@@ -2,10 +2,10 @@ import { Fragment, createElement } from 'react';
 import type { ComponentType, ReactElement } from 'react';
 import { forSlot } from './registry';
 
-// ── Slots: how features add UI without anything being edited ──────────────────────────────────
-// A SLOT is a region of the UI that features fill. Whatever renders a region never lists what goes
-// in it, so adding a panel, a table column, a row action, a toolbar control or a nav link is a NEW
-// FILE and nothing existing is touched.
+// ── Slots: regions of the UI that features fill ───────────────────────────────────────────────
+// A SLOT is a region of the UI that features fill. Whatever renders a region does not list what
+// goes in it; a contribution to a region (a panel, a table column, a row action, a toolbar
+// control, a nav link) is a separate file, registered by discovery (slots/discover.ts).
 //
 //   1. declare a region  ->  slots/defs/projectDetail.ts
 //        export const ProjectDetail = defineSlot<{ projectId: number }>('project.detail');
@@ -13,8 +13,8 @@ import { forSlot } from './registry';
 //   3. fill it           ->  features/projects/notes.slot.tsx
 //        export const contribution = ProjectDetail.fill({ order: 30, Component: ProjectNotes });
 //
-// This file, slots/registry.ts and slots/discover.ts are the mechanism — do not edit them. ADD a
-// file under slots/defs/ to declare a new region.
+// This file, slots/registry.ts and slots/discover.ts implement that mechanism; a region is
+// declared by a file under slots/defs/.
 
 export type Contribution<Ctx> = {
   /** Lower renders first; equal orders fall back to file path, so the order is always stable. */

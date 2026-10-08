@@ -2,13 +2,12 @@ import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { AppNav } from '../slots/defs/appNav';
 
-// The whole shell. It renders the nav region and the matched route — it does NOT know what pages
-// exist (they contribute to app.nav and appear under routes/), and it holds no state (what is open
-// or filtered is in the URL). Nothing about a new feature belongs in this file. Do not edit it.
+// The shell. It renders the nav region (filled from app.nav) and the matched route's component
+// (from routes/); it reads no page list and holds no view state — URL search params carry what is
+// open or filtered.
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  // Search params are an OPEN namespace, declared once here and inherited by every route: a feature
-  // claims a key just by reading/writing it (url/useSearchParam), so adding a filter or a selection
-  // is never an edit to a schema.
+  // Search params are an open namespace, declared once here and inherited by every route: a key is
+  // used by reading/writing it (url/useSearchParam), with no per-key schema.
   validateSearch: (search: Record<string, unknown>) => search,
   component: AppShell,
 });
