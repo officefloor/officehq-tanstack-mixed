@@ -15,5 +15,4 @@ service:
 The logic class's `service(...)` method takes injected dependencies (Spring `@Service` beans, the
 data layer) and a `net.officefloor.web.ObjectResponse<T>` to send the response.
 
-(The `/__test__` seed endpoint and the `/actuator/health` readiness endpoint are Spring-side — a
-`@RestController` and Actuator — not OfficeFloor routes.)
+(The `/actuator/health` readiness endpoint is Spring-side — Actuator — not an OfficeFloor route.)
