@@ -7,7 +7,7 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 export default defineConfig({
   plugins: [
     // Generates routeTree.gen.ts from routes/. The central route table is derived output; the
-    // generated file is gitignored (a build artifact, never committed).
+    // generated file is a build artifact.
     tanstackRouter({
       target: 'react',
       routesDirectory: './routes',
